@@ -1,0 +1,210 @@
+# Load cleaned data 
+
+library(formattable)
+library(readxl)
+library(tidyverse)
+
+file_path <- "C:/Users/s4584709/Downloads/conceptual_framework_data.xlsx"
+df <- read_excel(file_path)
+view (df)
+
+# create count tables for initial data and reactable tables
+
+
+library(reactablefmtr)
+
+
+# event counts
+
+event_count <- count(df, event)
+
+colnames(event_count)[1] = "Event"
+colnames(event_count)[2] = "Number of Studies"
+
+
+
+
+reactable(event_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(event_count, text_position = "above")
+))
+)
+
+# origin counts
+
+origin_count <- count(df, origin)
+
+colnames(origin_count)[1] = "Origin"
+colnames(origin_count)[2] = "Number of Studies"
+
+reactable(origin_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(origin_count, text_position = "above")
+))
+)
+
+# region counts
+
+region_count <- count(df, region)
+
+colnames(region_count)[1] = "Region"
+colnames(region_count)[2] = "Number of Studies"
+
+# length counts
+
+length_count <- count(df, length)
+
+colnames(length_count)[1] = "Length"
+colnames(length_count)[2] = "Number of Studies"
+
+reactable(length_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(length_count, text_position = "above")
+))
+)
+
+# methods counts
+
+method_count <- count(df, method)
+
+colnames(method_count)[1] = "Study method"
+colnames(method_count)[2] = "Number of Studies"
+
+reactable(method_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(method_count, text_position = "above")
+))
+)
+
+# regime counts
+
+regime_count <- count(df, regime)
+
+colnames(regime_count)[1] = "Regime shift"
+colnames(regime_count)[2] = "Number of Studies"
+
+# scale counts
+
+scale_count <- count(df, scale)
+
+colnames(scale_count)[1] = "Scale"
+colnames(scale_count)[2] = "Number of Studies"
+
+reactable(scale_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(scale_count, text_position = "above")
+))
+)
+
+# Create joined dataframes for counts
+
+ES <- df%>%
+  dplyr::select(ES1,ES2,ES3,ES4,ES5,ES6,ES7)
+View(ES)
+PN <- df%>%
+  dplyr::select(PN1,PN2,PN3,PN4,PN5,PN6,PN7)
+SC <- df%>%
+  dplyr::select(SC1,SC2,SC3,SC4,SC5,SC6,SC7)
+
+# make event-impact data frames
+
+eventimpact1 <- df %>% 
+  dplyr::select(event, ES1, SC1, PN1)
+eventimpact2 <- df %>% 
+  dplyr::select(event, ES2, SC2, PN2)
+eventimpact3 <- df %>% 
+  dplyr::select(event, ES3, SC3, PN3)
+eventimpact4 <- df %>% 
+  dplyr::select(event, ES4, SC4, PN4)
+eventimpact5 <- df %>% 
+  dplyr::select(event, ES5, SC5, PN5)
+eventimpact6 <- df %>% 
+  dplyr::select(event, ES6, SC6, PN6)
+eventimpact7 <- df %>% 
+  dplyr::select(event, ES7, SC7, PN7)
+
+# NA removal
+
+eventimpact2 <- na.omit(eventimpact2)
+eventimpact3 <- na.omit(eventimpact3)
+eventimpact4 <- na.omit(eventimpact4)
+eventimpact5 <- na.omit(eventimpact5)
+eventimpact6 <- na.omit(eventimpact6)
+eventimpact7 <- na.omit(eventimpact7)
+
+# Change column names in each eventimpact dataframe so that they can match
+
+colnames(eventimpact1)[2] = "ES"
+colnames(eventimpact1)[3] = "Impact"
+colnames(eventimpact1)[4] = "PN"
+colnames(eventimpact2)[2] = "ES"
+colnames(eventimpact2)[3] = "Impact"
+colnames(eventimpact2)[4] = "PN"
+colnames(eventimpact3)[2] = "ES"
+colnames(eventimpact3)[3] = "Impact"
+colnames(eventimpact3)[4] = "PN"
+colnames(eventimpact4)[2] = "ES"
+colnames(eventimpact4)[3] = "Impact"
+colnames(eventimpact4)[4] = "PN"
+colnames(eventimpact5)[2] = "ES"
+colnames(eventimpact5)[3] = "Impact"
+colnames(eventimpact5)[4] = "PN"
+colnames(eventimpact6)[2] = "ES"
+colnames(eventimpact6)[3] = "Impact"
+colnames(eventimpact6)[4] = "PN"
+colnames(eventimpact7)[2] = "ES"
+colnames(eventimpact7)[3] = "Impact"
+colnames(eventimpact7)[4] = "PN"
+
+# merge columns by event column to create final data set for plotting
+
+finalimpact <- bind_rows(eventimpact1,eventimpact2,eventimpact3,eventimpact4,eventimpact5,eventimpact6,eventimpact7)
+
+
+# finalimpact is the data table needed to plot the count of ecosystem services, supply chain impacts, and positive/negative impacts.
+
+# Positive/Negative Counts
+
+positive_count <- count(finalimpact, PN)
+
+colnames(positive_count)[1] = "Impact type"
+colnames(positive_count)[2] = "Number of Observations"
+
+reactable(positive_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(positive_count, text_position = "above")
+))
+)
+
+# ES counts
+
+ES_count <- count(finalimpact, ES)
+
+colnames(ES_count)[1] = "ES type"
+colnames(ES_count)[2] = "Number of Observations"
+
+reactable(ES_count,pagination = FALSE, defaultColDef = colDef(
+  cell = data_bars(ES_count, text_position = "above")
+))
+)
+
+# horizontal stacked bar chart with regions
+
+ggplot(df, aes(region, fill = origin))+
+  geom_bar() +
+  
+  geom_text(aes(label = after_stat(count)), stat = "count", position = "stack", hjust=2)+
+  
+  theme(legend.position="bottom")+
+  theme(legend.text = element_text(size = 1))+
+  theme_classic()+
+  coord_flip()
+
+
+
+
+# horizontal bar chart of event type and origin
+
+ggplot(df, aes(event, fill = origin))+
+  geom_bar() +
+  
+  geom_text(aes(label = after_stat(count)), stat = "count", position = "stack", hjust=2)+
+  
+  theme(legend.position="bottom")+
+  theme(legend.text = element_text(size = 1))+
+  theme_classic()+
+  coord_flip()
