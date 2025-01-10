@@ -1,210 +1,324 @@
-# Load cleaned data 
-
-library(formattable)
-library(readxl)
-library(tidyverse)
-
-file_path <- "C:/Users/s4584709/Downloads/conceptual_framework_data.xlsx"
-df <- read_excel(file_path)
-view (df)
-
-# create count tables for initial data and reactable tables
+# Create the global study map
 
 
-library(reactablefmtr)
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+# Plotting the regions with different colors based on count
+fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+merged.boundary.plot(ax=ax, linewidth=0.5, color='white')  # Draw boundaries
+
+# Color regions based on 'Count' using a colormap without automatic legend
+merged_plot = merged.plot(column='Count', ax=ax, cmap='cool', 
+                          missing_kwds={'color': 'lightgrey'})  # Missing regions will be light grey
+
+# Create a color bar manually to avoid auto legend issues
+sm = plt.cm.ScalarMappable(cmap='cool', norm=plt.Normalize(vmin=merged['Count'].min(), vmax=merged['Count'].max()))
+sm.set_array([])  # Only needed for older versions of Matplotlib
+cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0.02)  # Decreased pad for spacing
+cbar.set_label('Count by Region')
+
+# Add counts to the regions
+for x, y, label, region in zip(merged.geometry.centroid.x, merged.geometry.centroid.y, merged['Count'], merged['REGION']):
+    if region == 'Northern America':
+        # Adjust the position of Northern America count
+        ax.annotate(f'{int(label)}', xy=(x, y + 1), ha='left', va='bottom', fontsize=12, color='black', fontweight='bold')
+    else:
+        ax.annotate(f'{int(label)}', xy=(x, y), ha='center', fontsize=11, color='Black')
+
+# Title and layout adjustments
+plt.title('')
+plt.axis('off')  # Turn off the axis
+
+# Adjust spacing
+plt.subplots_adjust(top=1.5, bottom=0.1)  # You can tweak these values
 
 
-# event counts
+# Add north arrow
+ax.annotate('N', xy=(0.9, 0.95), xycoords='axes fraction', ha='center', va='center', fontsize=14, fontweight='bold', color='black',
+            bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
 
-event_count <- count(df, event)
+plt.show()
 
-colnames(event_count)[1] = "Event"
-colnames(event_count)[2] = "Number of Studies"
+# Stacked horizontal bar chart of the extreme events by event origin type
 
-
-
-
-reactable(event_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(event_count, text_position = "above")
-))
-)
-
-# origin counts
-
-origin_count <- count(df, origin)
-
-colnames(origin_count)[1] = "Origin"
-colnames(origin_count)[2] = "Number of Studies"
-
-reactable(origin_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(origin_count, text_position = "above")
-))
-)
-
-# region counts
-
-region_count <- count(df, region)
-
-colnames(region_count)[1] = "Region"
-colnames(region_count)[2] = "Number of Studies"
-
-# length counts
-
-length_count <- count(df, length)
-
-colnames(length_count)[1] = "Length"
-colnames(length_count)[2] = "Number of Studies"
-
-reactable(length_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(length_count, text_position = "above")
-))
-)
-
-# methods counts
-
-method_count <- count(df, method)
-
-colnames(method_count)[1] = "Study method"
-colnames(method_count)[2] = "Number of Studies"
-
-reactable(method_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(method_count, text_position = "above")
-))
-)
-
-# regime counts
-
-regime_count <- count(df, regime)
-
-colnames(regime_count)[1] = "Regime shift"
-colnames(regime_count)[2] = "Number of Studies"
-
-# scale counts
-
-scale_count <- count(df, scale)
-
-colnames(scale_count)[1] = "Scale"
-colnames(scale_count)[2] = "Number of Studies"
-
-reactable(scale_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(scale_count, text_position = "above")
-))
-)
-
-# Create joined dataframes for counts
-
-ES <- df%>%
-  dplyr::select(ES1,ES2,ES3,ES4,ES5,ES6,ES7)
-View(ES)
-PN <- df%>%
-  dplyr::select(PN1,PN2,PN3,PN4,PN5,PN6,PN7)
-SC <- df%>%
-  dplyr::select(SC1,SC2,SC3,SC4,SC5,SC6,SC7)
-
-# make event-impact data frames
-
-eventimpact1 <- df %>% 
-  dplyr::select(event, ES1, SC1, PN1)
-eventimpact2 <- df %>% 
-  dplyr::select(event, ES2, SC2, PN2)
-eventimpact3 <- df %>% 
-  dplyr::select(event, ES3, SC3, PN3)
-eventimpact4 <- df %>% 
-  dplyr::select(event, ES4, SC4, PN4)
-eventimpact5 <- df %>% 
-  dplyr::select(event, ES5, SC5, PN5)
-eventimpact6 <- df %>% 
-  dplyr::select(event, ES6, SC6, PN6)
-eventimpact7 <- df %>% 
-  dplyr::select(event, ES7, SC7, PN7)
-
-# NA removal
-
-eventimpact2 <- na.omit(eventimpact2)
-eventimpact3 <- na.omit(eventimpact3)
-eventimpact4 <- na.omit(eventimpact4)
-eventimpact5 <- na.omit(eventimpact5)
-eventimpact6 <- na.omit(eventimpact6)
-eventimpact7 <- na.omit(eventimpact7)
-
-# Change column names in each eventimpact dataframe so that they can match
-
-colnames(eventimpact1)[2] = "ES"
-colnames(eventimpact1)[3] = "Impact"
-colnames(eventimpact1)[4] = "PN"
-colnames(eventimpact2)[2] = "ES"
-colnames(eventimpact2)[3] = "Impact"
-colnames(eventimpact2)[4] = "PN"
-colnames(eventimpact3)[2] = "ES"
-colnames(eventimpact3)[3] = "Impact"
-colnames(eventimpact3)[4] = "PN"
-colnames(eventimpact4)[2] = "ES"
-colnames(eventimpact4)[3] = "Impact"
-colnames(eventimpact4)[4] = "PN"
-colnames(eventimpact5)[2] = "ES"
-colnames(eventimpact5)[3] = "Impact"
-colnames(eventimpact5)[4] = "PN"
-colnames(eventimpact6)[2] = "ES"
-colnames(eventimpact6)[3] = "Impact"
-colnames(eventimpact6)[4] = "PN"
-colnames(eventimpact7)[2] = "ES"
-colnames(eventimpact7)[3] = "Impact"
-colnames(eventimpact7)[4] = "PN"
-
-# merge columns by event column to create final data set for plotting
-
-finalimpact <- bind_rows(eventimpact1,eventimpact2,eventimpact3,eventimpact4,eventimpact5,eventimpact6,eventimpact7)
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from matplotlib.patches import Patch
 
 
-# finalimpact is the data table needed to plot the count of ecosystem services, supply chain impacts, and positive/negative impacts.
+# Load the Excel file
+file_path = r"C:\Users\n12082856\OneDrive - Queensland University of Technology\Documents\conceptual_framework_cleaned_data.xlsx"
+df = pd.read_excel(file_path)
 
-# Positive/Negative Counts
+# Combine specified values in the 'event' column
+df['event'] = df['event'].replace({
+    'Other: Hail storm': 'Other',
+    'Other: Coral bleaching event': 'Other',
+    'Drought; Heatwave': 'Drought'
+})
 
-positive_count <- count(finalimpact, PN)
+# Group by 'event' and 'origin', then count occurrences
+grouped_data = df.groupby(['event', 'origin']).size().unstack(fill_value=0)
 
-colnames(positive_count)[1] = "Impact type"
-colnames(positive_count)[2] = "Number of Observations"
+# Define custom colors for origins
+colors = {'Environmental': 'green', 'Social': 'orange', 'Economic': 'gray'}
 
-reactable(positive_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(positive_count, text_position = "above")
-))
-)
+# Plotting with transparency
+ax = grouped_data.plot(kind='barh', stacked=True, figsize=(10, 7), 
+                       color=[colors[col] for col in grouped_data.columns], alpha=0.5)
 
-# ES counts
+# Remove decimal points from x-axis
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
 
-ES_count <- count(finalimpact, ES)
+# Adding labels and title
+ax.set_xlabel('Total Count')
+ax.set_ylabel('Event')
+ax.set_title('')
 
-colnames(ES_count)[1] = "ES type"
-colnames(ES_count)[2] = "Number of Observations"
+# Create custom legend
+handles = [Patch(color=colors['Environmental'], label='Environmental'),
+           Patch(color=colors['Social'], label='Social'),
+           Patch(color=colors['Economic'], label='Economic')]  # Add Economic
 
-reactable(ES_count,pagination = FALSE, defaultColDef = colDef(
-  cell = data_bars(ES_count, text_position = "above")
-))
-)
+ax.legend(handles=handles, title='Origin')
 
-# horizontal stacked bar chart with regions
 
-ggplot(df, aes(region, fill = origin))+
-  geom_bar() +
-  
-  geom_text(aes(label = after_stat(count)), stat = "count", position = "stack", hjust=2)+
-  
-  theme(legend.position="bottom")+
-  theme(legend.text = element_text(size = 1))+
-  theme_classic()+
-  coord_flip()
+# Add total count labels inside the bars
+for i, event in enumerate(grouped_data.index):
+    totals = grouped_data.loc[event]
+    cumulative_width = 0
+    for origin, count in totals.items():
+        if count > 0:  # Only place text for non-zero counts
+            ax.text(cumulative_width + count / 2, i, str(count), 
+                    ha='left', va='center', color='black', fontsize=10)
+        cumulative_width += count
+
+for spine in ax.spines.values():
+    spine.set_visible(False)
+
+# Set y-axis ticks to be empty but keep the labels
+ax.yaxis.set_tick_params(length=0)  # Remove ticks but keep labels
+
+# Hide the x-axis and its values
+ax.xaxis.set_visible(False)
+
+# Show the plot
+plt.show()
+
+# Stacked horizontal bar chart of positive/negative impacts by ecosystem service type
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from matplotlib.patches import Patch
+
+
+# Load the Excel file
+file_path = r"C:\Users\n12082856\OneDrive - Queensland University of Technology\Chapter 1 Conceptual Framework R Data and Graphs\displayr_data.xlsx"
+df = pd.read_excel(file_path)
+
+# Combine specified values in the 'event' column
+df['event'] = df['event'].replace({
+    'Other: Hail storm': 'Other',
+    'Other: Coral bleaching event': 'Other',
+    'Drought; Heatwave': 'Drought'
+})
+
+# Group by 'event' and 'origin', then count occurrences
+grouped_data = df.groupby(['ES', 'PN']).size().unstack(fill_value=0)
+
+# Define custom colors for origins
+colors = {'Negative': 'red', 'Positive': 'blue'}
+
+# Plotting with transparency
+ax = grouped_data.plot(kind='barh', stacked=True, figsize=(10, 7), 
+                       color=[colors[col] for col in grouped_data.columns], alpha=0.3)
+
+# Remove decimal points from x-axis
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+
+# Remove the title of the legend
+ax.get_legend().set_title(None)
+
+# Adding labels and title
+ax.set_xlabel('Total Count')
+ax.set_ylabel('Ecosystem Service')
+ax.set_title('')
 
 
 
 
-# horizontal bar chart of event type and origin
+# Add total count labels inside the bars
+for i, event in enumerate(grouped_data.index):
+    totals = grouped_data.loc[event]
+    cumulative_width = 0
+    for origin, count in totals.items():
+        if count > 0:  # Only place text for non-zero counts
+            ax.text(cumulative_width + count / 2, i, str(count), 
+                    ha='left', va='center', color='black', fontsize=10)
+        cumulative_width += count
 
-ggplot(df, aes(event, fill = origin))+
-  geom_bar() +
-  
-  geom_text(aes(label = after_stat(count)), stat = "count", position = "stack", hjust=2)+
-  
-  theme(legend.position="bottom")+
-  theme(legend.text = element_text(size = 1))+
-  theme_classic()+
-  coord_flip()
+for spine in ax.spines.values():
+    spine.set_visible(False)
+
+# Set y-axis ticks to be empty but keep the labels
+ax.yaxis.set_tick_params(length=0)  # Remove ticks but keep labels
+
+# Hide the x-axis and its values
+ax.xaxis.set_visible(False)
+
+# Show the plot
+plt.show()
+
+# Impact type by type of ecosystem service impacted
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+import matplotlib.cm as cm
+
+# Load the Excel file
+file_path = r"C:\Users\n12082856\OneDrive - Queensland University of Technology\Chapter 1 Conceptual Framework R Data and Graphs\displayr_data.xlsx"
+df = pd.read_excel(file_path)
+
+# Combine specified values in the 'event' column
+df['event'] = df['event'].replace({
+    'Other: Hail storm': 'Other',
+    'Other: Coral bleaching event': 'Other',
+    'Drought; Heatwave': 'Drought'
+})
+
+# Group by 'event' and 'origin', then count occurrences
+grouped_data = df.groupby(['ES', 'Impact']).size().unstack(fill_value=0)
+
+# Define colors using the viridis colormap
+inferno = cm.get_cmap('inferno', len(grouped_data.columns))
+colors = [inferno(i) for i in range(inferno.N)]
+
+# Create a mapping for abbreviations
+impact_abbreviations = {
+    'Direct impact on Demand; Direct impact on Flow': 'Demand & Flow',
+    'Direct impact on Demand; Indirect impact on Demand': 'Demand & Indirect',
+    'Direct impact on Supply': 'Direct Supply',
+    'Direct impact on Supply; Direct impact on Demand': 'Supply & Demand',
+    'Direct impact on Supply; Direct impact on Demand; Direct impact on Flow': 'Supply & Demand & Flow',
+    'Direct impact on Supply; Direct impact on Demand; Indirect impact on Demand': 'Supply & Demand & Indirect',
+    'Direct impact on Supply; Indirect impact on Supply': 'Indirect Supply',
+    'Direct impact on Supply; Indirect impact on Supply; Direct impact on Demand; Indirect impact on Demand': 'Complex Indirect',
+    'Direct impact on Supply; Indirect impact on Supply; Indirect impact on Demand': 'Indirect Complex'
+}
+
+# Plotting with transparency
+ax = grouped_data.plot(kind='barh', stacked=True, figsize=(10, 7), 
+                       color=colors, alpha=0.6)
+
+# Remove decimal points from x-axis
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+
+# Adding labels and title
+ax.set_xlabel('Total Count')
+ax.set_ylabel('Ecosystem Service')
+ax.set_title('Impact by Ecosystem Service')
+
+# Add total count labels inside the bars
+for i, event in enumerate(grouped_data.index):
+    totals = grouped_data.loc[event]
+    cumulative_width = 0
+    for origin, count in totals.items():
+        if count > 0:  # Only place text for non-zero counts
+            ax.text(cumulative_width + count / 2, i, str(count), 
+                    ha='center', va='center', color='white', fontsize=10)  # Center the text
+        cumulative_width += count
+
+# Remove black lines around the figure
+for spine in ax.spines.values():
+    spine.set_visible(False)
+
+# Set y-axis ticks to be empty but keep the labels
+ax.yaxis.set_tick_params(length=0)  # Remove ticks but keep labels
+
+# Create a custom legend
+handles = [plt.Rectangle((0, 0), 1, 1, color=colors[i]) for i in range(len(grouped_data.columns))]
+ax.legend(handles, [impact_abbreviations[col] for col in grouped_data.columns], loc='upper right', fontsize='small')
+
+# Show the plot
+plt.show()
+
+# Impact type by type of extreme event
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+import matplotlib.cm as cm
+
+# Load the Excel file
+file_path = r"C:\Users\n12082856\OneDrive - Queensland University of Technology\Chapter 1 Conceptual Framework R Data and Graphs\displayr_data.xlsx"
+df = pd.read_excel(file_path)
+
+# Combine specified values in the 'event' column
+df['event'] = df['event'].replace({
+    'Other: Hail storm': 'Other',
+    'Other: Coral bleaching event': 'Other',
+    'Drought; Heatwave': 'Drought'
+})
+
+# Group by 'event' and 'origin', then count occurrences
+grouped_data = df.groupby(['event', 'Impact']).size().unstack(fill_value=0)
+
+# Define colors using the viridis colormap
+inferno = cm.get_cmap('inferno', len(grouped_data.columns))
+colors = [inferno(i) for i in range(inferno.N)]
+
+# Create a mapping for abbreviations
+impact_abbreviations = {
+    'Direct impact on Demand; Direct impact on Flow': 'Demand & Flow',
+    'Direct impact on Demand; Indirect impact on Demand': 'Demand & Indirect',
+    'Direct impact on Supply': 'Direct Supply',
+    'Direct impact on Supply; Direct impact on Demand': 'Supply & Demand',
+    'Direct impact on Supply; Direct impact on Demand; Direct impact on Flow': 'Supply & Demand & Flow',
+    'Direct impact on Supply; Direct impact on Demand; Indirect impact on Demand': 'Supply & Demand & Indirect',
+    'Direct impact on Supply; Indirect impact on Supply': 'Indirect Supply',
+    'Direct impact on Supply; Indirect impact on Supply; Direct impact on Demand; Indirect impact on Demand': 'Complex Indirect',
+    'Direct impact on Supply; Indirect impact on Supply; Indirect impact on Demand': 'Indirect Complex'
+}
+
+# Plotting with transparency
+ax = grouped_data.plot(kind='barh', stacked=True, figsize=(10, 7), 
+                       color=colors, alpha=0.6)
+
+# Remove decimal points from x-axis
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+
+# Adding labels and title
+ax.set_xlabel('Total Count')
+ax.set_ylabel('Event')
+ax.set_title('Impact by Event')
+
+# Add total count labels inside the bars
+for i, event in enumerate(grouped_data.index):
+    totals = grouped_data.loc[event]
+    cumulative_width = 0
+    for origin, count in totals.items():
+        if count > 0:  # Only place text for non-zero counts
+            ax.text(cumulative_width + count / 2, i, str(count), 
+                    ha='center', va='center', color='white', fontsize=10)  # Center the text
+        cumulative_width += count
+
+# Remove black lines around the figure
+for spine in ax.spines.values():
+    spine.set_visible(False)
+
+# Set y-axis ticks to be empty but keep the labels
+ax.yaxis.set_tick_params(length=0)  # Remove ticks but keep labels
+
+# Create a custom legend
+handles = [plt.Rectangle((0, 0), 1, 1, color=colors[i]) for i in range(len(grouped_data.columns))]
+ax.legend(handles, [impact_abbreviations[col] for col in grouped_data.columns], loc='upper right', fontsize='small')
+
+# Show the plot
+plt.show()
+
+
+
